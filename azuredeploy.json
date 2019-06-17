@@ -1,0 +1,284 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "solutionStorageName": {
+            "type": "string"
+        },
+        "solutionStorageType": {
+            "type": "string",
+            "allowedValues": [
+                "Standard_LRS",
+                "Standard_ZRS",
+                "Standard_GRS",
+                "Standard_RAGRS",
+                "Premium_LRS"
+            ],
+            "defaultValue": "Standard_LRS",
+            "metadata": {
+                "description": "The type of replication to use for the storage account."
+            }
+        },
+        "solutionStorageKind": {
+            "type": "string",
+            "allowedValues": [
+                "StorageV2"
+            ],
+            "defaultValue": "StorageV2"
+        },
+        "amsName": {
+            "type": "string"
+        },
+        "amsStorageType": {
+            "type": "string",
+            "allowedValues": [
+                "Standard_LRS",
+                "Standard_ZRS",
+                "Standard_GRS",
+                "Standard_RAGRS",
+                "Premium_LRS"
+            ],
+            "defaultValue": "Standard_LRS",
+            "metadata": {
+                "description": "The type of replication to use for the storage account."
+            }
+        },
+        "amsTransformPresent": {
+            "type": "string",
+            "allowedValues": [
+                "H264SingleBitrateSD",
+                "H264SingleBitrate1080p",
+                "H264SingleBitrate1080p",
+                "AdaptiveStreaming",
+                "AACGoodQualityAudio",
+                "ContentAwareEncodingExperimental",
+                "H264MultipleBitrate1080p",
+                "H264MultipleBitrate720p",
+                "H264MultipleBitrateSD"
+            ],
+            "defaultValue": "H264MultipleBitrate1080p",
+            "metadata": {
+                "description": "Which BuiltInStandardEncoderPreset is to be used."
+            }
+        },
+        "amsStorageKind": {
+            "type": "string",
+            "allowedValues": [
+                "StorageV2"
+            ],
+            "defaultValue": "StorageV2"
+        },
+        "functionName": {
+            "type": "string"
+        },
+        "functionStorageName": {
+            "type": "string"
+        },
+        "AAD_CLIENT_ID": {
+            "type": "securestring",
+            "metadata": {
+              "description": "Client Id of the service principal."
+          }
+        },
+        "AAD_SECRET": {
+            "type": "securestring",
+            "metadata": {
+              "description": "Secret of the service principal."
+          }
+        },
+        "AAD_TENANT_ID": {
+            "type": "securestring",
+            "metadata": {
+              "description": "Tenant Id of the service principal."
+          }
+        }
+    },
+    "variables": {
+        "function_insights_name": "[concat(parameters('functionName'), 'insights')]"
+    },
+    "resources": [
+        {
+            "name": "[parameters('solutionStorageName')]",
+            "type": "microsoft.storage/storageaccounts",
+            "apiVersion": "2019-04-01",
+            "location": "[resourceGroup().location]",
+            "sku": {
+                "name": "[parameters('solutionStorageType')]"
+            },
+            "kind": "[parameters('solutionStorageKind')]"
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/blobServices/containers",
+            "apiVersion": "2018-03-01-preview",
+            "name": "[concat(parameters('solutionStorageName'), '/default/fileout')]",
+            "dependsOn": [
+                "[parameters('solutionStorageName')]"
+            ],
+            "properties": {
+                "publicAccess": "None"
+            }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/blobServices/containers",
+            "apiVersion": "2018-03-01-preview",
+            "name": "[concat(parameters('solutionStorageName'), '/default/filein')]",
+            "dependsOn": [
+                "[parameters('solutionStorageName')]"
+            ],
+            "properties": {
+                "publicAccess": "None"
+            }
+        },
+        {
+            "dependsOn": [
+                "[concat('microsoft.storage/storageaccounts/', parameters('amsName'))]"
+            ],
+            "apiVersion": "2015-10-01",
+            "name": "[parameters('amsName')]",
+            "location": "[resourceGroup().location]",
+            "properties": {
+                "storageAccounts": [
+                    {
+                        "isPrimary": true,
+                        "id": "[resourceId('microsoft.storage/storageaccounts/', parameters('amsName'))]"
+                    }
+                ]
+            },
+            "type": "microsoft.media/mediaservices"
+        },
+        {
+            "name": "[concat(parameters('amsName'), '/', 'DefaultDeployedEncodingPreset')]",
+            "type": "Microsoft.Media/mediaservices/transforms",
+            "apiVersion": "2018-07-01",
+            "properties": {
+              "description": "Example transform to illustrate create and update.",
+              "outputs": [
+                {
+                  "relativePriority": null,
+                  "onError": null,
+                  
+                  "preset": {
+                    "@odata.type": "#Microsoft.Media.BuiltInStandardEncoderPreset",
+                    "presetName": "AdaptiveStreaming"
+                  }
+                }
+              ]
+            },"dependsOn": [
+                "[concat('microsoft.media/mediaservices/', parameters('amsName'))]"
+            ]
+      },
+        {
+            "name": "[parameters('amsName')]",
+            "type": "microsoft.storage/storageaccounts",
+            "apiVersion": "2019-04-01",
+            "location": "[resourceGroup().location]",
+            "sku": {
+                "name": "[parameters('amsStorageType')]"
+            },
+            "kind": "[parameters('amsStorageKind')]"
+        },
+        {
+            "name": "[parameters('functionName')]",
+            "type": "Microsoft.Web/sites",
+            "properties": {
+                "siteConfig": {
+                    "appSettings": [
+                        {
+                            "name": "FUNCTIONS_WORKER_RUNTIME",
+                            "value": "node"
+                        },
+                        {
+                            "name": "AzureWebJobsStorage",
+                            "value": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('functionStorageName'),';AccountKey=',listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('functionStorageName')), '2015-05-01-preview').key1)]"
+                        },
+                        {
+                            "name": "FUNCTIONS_EXTENSION_VERSION",
+                            "value": "~2"
+                        },
+                        {
+                            "name": "WEBSITE_NODE_DEFAULT_VERSION",
+                            "value": "10.14.1"
+                        },
+                        {
+                            "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
+                            "value": "[reference( concat('microsoft.insights/components/', variables('function_insights_name')), '2015-05-01').InstrumentationKey]"
+                        },
+                        {
+                            "name": "AAD_CLIENT_ID",
+                            "value": "[parameters('AAD_CLIENT_ID')]"
+                        },
+                        {
+                            "name": "AAD_ENDPOINT",
+                            "value": "https://login.microsoftonline.com"
+                        },
+                        {
+                            "name": "AAD_SECRET",
+                            "value": "[parameters('AAD_SECRET')]"
+                        },
+                        {
+                            "name": "AAD_TENANT_ID",
+                            "value": "[parameters('AAD_TENANT_ID')]"
+                        },
+                        {
+                            "name": "AMS_STORAGE_ACC_NAME",
+                            "value": "[parameters('amsName')]"
+                        },
+                        {
+                            "name": "AMS_STORAGE_KEY",
+                            "value": "[listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('amsName')), providers('Microsoft.Storage', 'storageAccounts').apiVersions[0]).keys[0].value]"
+                        },
+                        {
+                            "name": "STORAGE_ACC_NAME",
+                            "value": "[parameters('solutionStorageName')]"
+                        },
+                        {
+                            "name": "AMS_RESOURCE_GROUP",
+                            "value": "[resourceGroup().name]"
+                        },
+                        {
+                            "name": "STORAGE_KEY",
+                            "value": "[listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('solutionStorageName')), providers('Microsoft.Storage', 'storageAccounts').apiVersions[0]).keys[0].value]"
+                        },
+                        {
+                            "name": "STORAGE_TARGET_CONTAINER",
+                            "value": "fileout"
+                        },
+                        {
+                            "name": "SUBSCRIPTION_ID",
+                            "value": "[subscription().subscriptionId]"
+                        }
+                    ]
+                },
+                "name": "[parameters('functionName')]",
+                "clientAffinityEnabled": false,
+                "reserved": true
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('functionStorageName'))]",
+                "[concat('microsoft.insights/components/', variables('function_insights_name'))]"
+            ],
+            "apiVersion": "2016-03-01",
+            "location": "[resourceGroup().location]",
+            "kind": "functionapp,linux"
+        },
+        {
+            "apiVersion": "2015-05-01-preview",
+            "type": "Microsoft.Storage/storageAccounts",
+            "name": "[parameters('functionStorageName')]",
+            "location": "[resourceGroup().location]",
+            "properties": {
+                "accountType": "Standard_LRS"
+            }
+        },
+        {
+            "apiVersion": "2015-05-01",
+            "name": "[variables('function_insights_name')]",
+            "type": "microsoft.insights/components",
+            "location": "[resourceGroup().location]",
+            "properties": {
+                "ApplicationId": "[parameters('functionName')]",
+                "Request_Source": "IbizaWebAppExtensionCreate"
+            }
+        }
+    ]
+}
