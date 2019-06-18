@@ -26,5 +26,6 @@ steps:
   inputs:
     rootFolderOrFile: '$(System.DefaultWorkingDirectory)/az-function-app'
     includeRootFolder: false
+    archiveFile: '$(Build.ArtifactStagingDirectory)/az-function-app-$(Build.BuildId).zip'
 - task: PublishBuildArtifacts@1
   displayName: 'Publish Artifact: drop'
