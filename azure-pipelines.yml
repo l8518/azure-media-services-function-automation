@@ -16,6 +16,7 @@ steps:
   displayName: 'Install Node.js'
 
 - script: |
+    npm install -g azure-functions-core-tools
     cd az-function-app
     npm install
     npm run build:production
