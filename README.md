@@ -6,14 +6,16 @@ Azure Media Services Automation with Azure Functions that automatically encodes 
 
 # Setup
 ## Create a Service Principal
-Create a service principal via App Registrations Azure Portal and write down following values:
-1. Application (client) ID
+Follow these steps to create an application in your Azure subscription:
+1. Via the Azure Portal or Azure CLI create an App Registration, write down:
+    - Application (client) ID
+    - Directory (tenant) ID
 
-2. Directory (tenant) ID
+2. Add a new client secret to the just created application, write down:
+    -  client secret value
 
-3. Create and remeber a client secret
-
-4. Object ID (!Important!: not from the app registration, but from the managed application in local directory)
+3. Open the managed application, not the app registration, write down:
+    - Object ID
 
 ## Deploy the given ARM script
 [![Deploy to Azure](https://azuredeploy.net/deploybutton.png)](https://azuredeploy.net/)

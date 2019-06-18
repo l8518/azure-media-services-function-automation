@@ -171,7 +171,7 @@
                       "principalId": "[parameters('AAD_Object_ID')]"
                     },
                     "dependsOn": [
-                        "[concat('microsoft.media/mediaservices/', parameters('amsName'))]"
+                        "[concat('Microsoft.Media/mediaServices/', parameters('amsName'))]"
                     ]
                   }
             ]
@@ -194,7 +194,7 @@
                 ]
             },
             "dependsOn": [
-                "[concat('microsoft.media/mediaservices/', parameters('amsName'))]"
+                "[concat('Microsoft.Media/mediaServices/', parameters('amsName'))]"
             ]
         },
         {
@@ -239,7 +239,7 @@
                         },
                         {
                             "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
-                            "value": "[reference( concat('microsoft.insights/components/', variables('function_insights_name')), '2015-05-01').InstrumentationKey]"
+                            "value": "[reference( concat('Microsoft.Insights/components/', variables('function_insights_name')), '2015-05-01').InstrumentationKey]"
                         },
                         {
                             "name": "AAD_CLIENT_ID",
@@ -293,7 +293,7 @@
             },
             "dependsOn": [
                 "[resourceId('Microsoft.Storage/storageAccounts', parameters('functionStorageName'))]",
-                "[concat('microsoft.insights/components/', variables('function_insights_name'))]"
+                "[concat('Microsoft.Insights/components/', variables('function_insights_name'))]"
             ],
             "apiVersion": "2015-08-01",
             "location": "[resourceGroup().location]",
