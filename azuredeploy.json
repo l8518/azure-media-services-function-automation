@@ -165,7 +165,7 @@
                 {
                     "type": "Microsoft.Media/mediaservices/providers/roleAssignments",
                     "apiVersion": "2017-05-01",
-                    "name": "[concat(parameters('amsName'), '/Microsoft.Authorization/', guid(subscription().subscriptionId, 'amsFuncAtuh'))]",
+                    "name": "[concat(parameters('amsName'), '/Microsoft.Authorization/', guid(resourceGroup().id, subscription().subscriptionId, 'amsFuncAtuh'))]",
                     "properties": {
                       "roleDefinitionId": "[variables('Contributor')]",
                       "principalId": "[parameters('AAD_Object_ID')]"
