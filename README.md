@@ -13,14 +13,23 @@ Create a service principal via App Registrations Azure Portal and write down fol
 
 3. Create and remeber a client secret
 
+4. Object ID (!Important!: not from the app registration, but from the managed application in local directory)
+
 ## Deploy the given ARM script
 [![Deploy to Azure](https://azuredeploy.net/deploybutton.png)](https://azuredeploy.net/)
 
-## Add the Service Principal to the Azure Media Service (via API Access or IAM)
-
 ## Deploy Azure Function App Functions
+
+Either use the github release, or build your own.
+
+### Install (optional)
+
 You might need to install the Azure Functions Core Tools and the Azure Functions Extensions for VS Code.
 If you do not want to deploy via VS Code, just create a zip file of the dist folder and upload it.
+
+- `cd az-function-app` and use `npm install` to install relevant packages.
+
+- `npm run build:production` for a production build, then zip dist file and 
 
 ## Create the Event Subscriptions Manually
 

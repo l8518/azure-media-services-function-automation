@@ -74,32 +74,48 @@
         "functionStorageName": {
             "type": "string"
         },
+        "functionPackageURL": {
+            "type": "string",
+            "metadata": {
+                "description": "URL of the function app package."
+            }
+        },
         "AAD_CLIENT_ID": {
             "type": "securestring",
             "metadata": {
-              "description": "Client Id of the service principal."
-          }
+                "description": "Client Id of the service principal."
+            }
         },
         "AAD_SECRET": {
             "type": "securestring",
             "metadata": {
-              "description": "Secret of the service principal."
-          }
+                "description": "Secret of the service principal."
+            }
         },
         "AAD_TENANT_ID": {
             "type": "securestring",
             "metadata": {
-              "description": "Tenant Id of the service principal."
-          }
+                "description": "Tenant Id of the service principal."
+            }
+        },
+        "AAD_Object_ID": {
+            "type": "securestring",
+            "metadata": {
+                "description": "Object Id of the service principal."
+            }
         }
+        
     },
     "variables": {
-        "function_insights_name": "[concat(parameters('functionName'), 'insights')]"
+        "function_insights_name": "[concat(parameters('functionName'), 'insights')]",
+        "Owner": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Authorization/roleDefinitions/', '8e3af657-a8ff-443c-a75c-2fe8c4bcb635')]",
+        "Contributor": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Authorization/roleDefinitions/', 'b24988ac-6180-42a0-ab88-20f7382dd24c')]",
+        "Reader": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Authorization/roleDefinitions/', 'acdd72a7-3385-48ef-bd42-f606fba81ae7')]"
     },
     "resources": [
         {
             "name": "[parameters('solutionStorageName')]",
-            "type": "microsoft.storage/storageaccounts",
+            "type": "Microsoft.Storage/storageAccounts",
             "apiVersion": "2019-04-01",
             "location": "[resourceGroup().location]",
             "sku": {
@@ -144,29 +160,43 @@
                     }
                 ]
             },
-            "type": "microsoft.media/mediaservices"
+            "type": "Microsoft.Media/mediaServices",
+            "resources": [
+                {
+                    "type": "Microsoft.Media/mediaservices/providers/roleAssignments",
+                    "apiVersion": "2017-05-01",
+                    "name": "[concat(parameters('amsName'), '/Microsoft.Authorization/', guid(subscription().subscriptionId, 'amsFuncAtuh'))]",
+                    "properties": {
+                      "roleDefinitionId": "[variables('Contributor')]",
+                      "principalId": "[parameters('AAD_Object_ID')]"
+                    },
+                    "dependsOn": [
+                        "[concat('microsoft.media/mediaservices/', parameters('amsName'))]"
+                    ]
+                  }
+            ]
         },
         {
             "name": "[concat(parameters('amsName'), '/', 'DefaultDeployedEncodingPreset')]",
-            "type": "Microsoft.Media/mediaservices/transforms",
+            "type": "Microsoft.Media/mediaServices/transforms",
             "apiVersion": "2018-07-01",
             "properties": {
-              "description": "Example transform to illustrate create and update.",
-              "outputs": [
-                {
-                  "relativePriority": null,
-                  "onError": null,
-                  
-                  "preset": {
-                    "@odata.type": "#Microsoft.Media.BuiltInStandardEncoderPreset",
-                    "presetName": "AdaptiveStreaming"
-                  }
-                }
-              ]
-            },"dependsOn": [
+                "description": "Example transform to illustrate create and update.",
+                "outputs": [
+                    {
+                        "relativePriority": "Normal",
+                        "onError": "StopProcessingJob",
+                        "preset": {
+                            "@odata.type": "#Microsoft.Media.BuiltInStandardEncoderPreset",
+                            "presetName": "AdaptiveStreaming"
+                        }
+                    }
+                ]
+            },
+            "dependsOn": [
                 "[concat('microsoft.media/mediaservices/', parameters('amsName'))]"
             ]
-      },
+        },
         {
             "name": "[parameters('amsName')]",
             "type": "microsoft.storage/storageaccounts",
@@ -194,6 +224,14 @@
                         {
                             "name": "FUNCTIONS_EXTENSION_VERSION",
                             "value": "~2"
+                        },
+                        {
+                            "name": "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING",
+                            "value": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('functionStorageName'),';AccountKey=',listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('functionStorageName')), '2015-05-01-preview').key1)]"
+                        },
+                        {
+                            "name": "WEBSITE_CONTENTSHARE",
+                            "value": "[concat(toLower(parameters('functionName')), '9638')]"
                         },
                         {
                             "name": "WEBSITE_NODE_DEFAULT_VERSION",
@@ -251,15 +289,29 @@
                 },
                 "name": "[parameters('functionName')]",
                 "clientAffinityEnabled": false,
-                "reserved": true
+                "reserved": false
             },
             "dependsOn": [
                 "[resourceId('Microsoft.Storage/storageAccounts', parameters('functionStorageName'))]",
                 "[concat('microsoft.insights/components/', variables('function_insights_name'))]"
             ],
-            "apiVersion": "2016-03-01",
+            "apiVersion": "2015-08-01",
             "location": "[resourceGroup().location]",
-            "kind": "functionapp,linux"
+            "kind": "functionapp",
+            "resources": [
+                {
+                    "name": "MSDeploy",
+                    "type": "extensions",
+                    "location": "[resourceGroup().location]",
+                    "apiVersion": "2015-08-01",
+                    "dependsOn": [
+                        "[concat('Microsoft.Web/sites/', parameters('functionName'))]"
+                    ],
+                    "properties": {
+                        "packageUri": "[parameters('functionPackageURL')]"
+                    }
+                }
+            ]
         },
         {
             "apiVersion": "2015-05-01-preview",
@@ -273,7 +325,7 @@
         {
             "apiVersion": "2015-05-01",
             "name": "[variables('function_insights_name')]",
-            "type": "microsoft.insights/components",
+            "type": "Microsoft.Insights/components",
             "location": "[resourceGroup().location]",
             "properties": {
                 "ApplicationId": "[parameters('functionName')]",
