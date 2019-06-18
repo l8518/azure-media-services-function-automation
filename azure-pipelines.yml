@@ -16,6 +16,12 @@ steps:
   displayName: 'Install Node.js'
 
 - script: |
+    cd az-function-app
     npm install
     npm run build:production
   displayName: 'npm install and build'
+- task: PublishBuildArtifacts@1
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+    ArtifactName: 'az-function-app'
+    publishLocation: 'Container'
