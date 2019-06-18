@@ -1,5 +1,7 @@
+
 # azure-media-services-function-automation
 Azure Media Services Automation with Azure Functions that automatically encodes video files.
+[![Build Status](https://dev.azure.com/l8518/azure-media-services-function-automation/_apis/build/status/l8518.azure-media-services-function-automation?branchName=master)](https://dev.azure.com/l8518/azure-media-services-function-automation/_build/latest?definitionId=1&branchName=master)
 
 # Setup
 ## Create a Service Principal
